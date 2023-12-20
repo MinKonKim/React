@@ -1,12 +1,20 @@
-import React, { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components'
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser, removeUser } from "../store/userSlice";
 
 const Nav = () => {
-
-  const initialUserData = localStorage.getItem('userData') ?
-    JSON.parse(localStorage.getItem('userData')) : {};
+  const initialUserData = localStorage.getItem("userData")
+    ? JSON.parse(localStorage.getItem("userData"))
+    : {};
 
   const [show, setShow] = useState(false);
   const { pathname } = useLocation();
@@ -14,27 +22,30 @@ const Nav = () => {
   const navigate = useNavigate();
   const auth = getAuth();
   const provider = new GoogleAuthProvider();
-  const [userData, setUserData] = useState(initialUserData);
+
+  const dispatch = useDispatch();
+
+  const userData = useSelector((state) => state.user);
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        if (pathname === "/") { //로그인인 된 상태에서 login 화면으로 못가게 하기 위해서
+        if (pathname === "/") {
+          //로그인인 된 상태에서 login 화면으로 못가게 하기 위해서
           navigate("/main");
         }
       } else {
         navigate("/");
       }
-    })
-  }, [auth, navigate, pathname])
-
+    });
+  }, [auth, navigate, pathname]);
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener("scroll", handleScroll);
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-    }
-  }, [])
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   // console.log('useLocation.search', useLocation().search);
 
@@ -44,34 +55,40 @@ const Nav = () => {
     } else {
       setShow(false);
     }
-  }
+  };
 
   const handleChange = (e) => {
     setSearchValue(e.target.value);
     navigate(`/search?q=${e.target.value}`);
-  }
+  };
 
   const handleAuth = () => {
     signInWithPopup(auth, provider)
-      .then(result => {
-        setUserData(result.user);
+      .then((result) => {
+        dispatch(
+          setUser({
+            id: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+          })
+        );
         localStorage.setItem("userData", JSON.stringify(result.user));
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error);
-      })
-  }
+      });
+  };
 
   const handleSignOut = () => {
     signOut(auth)
       .then(() => {
-        setUserData({});
         navigate(`/`);
       })
       .catch((error) => {
-        console.log(error)
-      })
-  }
+        console.log(error);
+      });
+  };
 
   return (
     <NavWrapper show={show}>
@@ -83,15 +100,16 @@ const Nav = () => {
         />
       </Logo>
 
-      {pathname === "/" ?
-        (<Login onClick={handleAuth}>Login</Login>) :
+      {pathname === "/" ? (
+        <Login onClick={handleAuth}>Login</Login>
+      ) : (
         <>
           <Input
             value={searchValue}
             onChange={handleChange}
-            className='nav__input'
+            className="nav__input"
             type="text"
-            placeholder='검색해주세요.'
+            placeholder="검색해주세요."
           />
 
           <SignOut>
@@ -101,20 +119,21 @@ const Nav = () => {
             </DropDown>
           </SignOut>
         </>
-      }
+      )}
     </NavWrapper>
-  )
-}
+  );
+};
 
-export default Nav
+export default Nav;
 
+//#region stylesheet
 const DropDown = styled.div`
   position: absolute;
   top: 48px;
   right: 0px;
   background: rgb(19, 19, 19);
   border: 1px solid rgba(151, 151, 151, 0.34);
-  border-radius:  4px;
+  border-radius: 4px;
   box-shadow: rgb(0 0 0 /50%) 0px 0px 18px 0px;
   padding: 10px;
   font-size: 14px;
@@ -146,9 +165,8 @@ const UserImg = styled.img`
   height: 100%;
 `;
 
-
 const Login = styled.a`
-  background-color: rgba(0,0,0,0.6);
+  background-color: rgba(0, 0, 0, 0.6);
   padding: 8px 16px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -163,14 +181,14 @@ const Login = styled.a`
 `;
 
 const Input = styled.input`
-    position: fixed;
-    left: 50%;
-    transform: translate(-50%, 0);
-    background-color: rgba(0,0,0, 0.582);
-    border-radius: 5px;
-    color: white; 
-    padding: 5px;
-    border: none;
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background-color: rgba(0, 0, 0, 0.582);
+  border-radius: 5px;
+  color: white;
+  padding: 5px;
+  border: none;
 `;
 
 const NavWrapper = styled.nav`
@@ -179,7 +197,7 @@ const NavWrapper = styled.nav`
   left: 0;
   right: 0;
   height: 70px;
-  background-color: ${props => props.show ? "#090b13" : "transparent"};
+  background-color: ${(props) => (props.show ? "#090b13" : "transparent")};
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -189,7 +207,7 @@ const NavWrapper = styled.nav`
 `;
 
 const Logo = styled.a`
-  padding:0;
+  padding: 0;
   width: 80px;
   margin-top: 4px;
   max-height: 70px;
@@ -200,4 +218,5 @@ const Logo = styled.a`
     display: block;
     width: 100%;
   }
-`
+`;
+//#endregion
