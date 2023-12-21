@@ -33,6 +33,16 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/", (req, res, next) => {
+  setImmediate(() => {
+    next(new Error("woops"));
+  });
+});
+
+app.use((err, req, res, next) => {
+  res.json({ message: error.message });
+});
+
 app.use("/users", usersRouter);
 app.use("/posts", postsRouter);
 app.use("/products", productsRouter);
